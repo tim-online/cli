@@ -78,6 +78,14 @@
     "parser": "(f.Value.(*StringSlice)).Value(), error(nil)"
   },
   {
+    "name": "Time",
+    "type": "time.Time",
+    "doctail": " (see https://golang.org/pkg/time/#Parse)",
+    "context_default": "nil",
+    "context_type": "*time.Time",
+    "parser": "time.Parse(time.RFC3339, f.Value.String())"
+  },
+  {
     "name": "Uint64",
     "type": "uint64",
     "context_default": "0",

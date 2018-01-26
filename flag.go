@@ -195,6 +195,34 @@ func (f StringSliceFlag) ApplyWithError(set *flag.FlagSet) error {
 	return nil
 }
 
+// Apply populates the flag given the flag set and environment
+// Ignores errors
+func (f TimeFlag) Apply(set *flag.FlagSet) {
+	f.ApplyWithError(set)
+}
+
+// ApplyWithError populates the flag given the flag set and environment
+func (f TimeFlag) ApplyWithError(set *flag.FlagSet) error {
+	if envVal, ok := flagFromFileEnv(f.FilePath, f.EnvVar); ok {
+		envValTime, err := time.Parse(f.Format, envVal)
+		if err != nil {
+			return fmt.Errorf("could not parse %s as time for flag %s: %s", envVal, f.Name, err)
+		}
+
+		f.Value = envValTime
+	}
+
+	eachName(f.Name, func(name string) {
+		if f.Destination != nil {
+			set.TimeVar(f.Destination, name, f.Value, f.Format, f.Usage)
+			return
+		}
+		set.Time(name, f.Value, f.Format, f.Usage)
+	})
+
+	return nil
+}
+
 // IntSlice is an opaque type for []int to satisfy flag.Value and flag.Getter
 type IntSlice []int
 

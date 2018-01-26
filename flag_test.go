@@ -52,6 +52,9 @@ func TestFlagsFromEnv(t *testing.T) {
 		{"1s", 1 * time.Second, DurationFlag{Name: "time", EnvVar: "TIME"}, ""},
 		{"foobar", false, DurationFlag{Name: "time", EnvVar: "TIME"}, fmt.Sprintf(`could not parse foobar as duration for flag time: .*`)},
 
+		{"2006-01-02", time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC), TimeFlag{Name: "time", Format: "2006-01-02", EnvVar: "TIME"}, ""},
+		{"foobar", false, TimeFlag{Name: "time", EnvVar: "TIME"}, fmt.Sprintf(`could not parse foobar as time for flag time: .*`)},
+
 		{"1.2", 1.2, Float64Flag{Name: "seconds", EnvVar: "SECONDS"}, ""},
 		{"1", 1.0, Float64Flag{Name: "seconds", EnvVar: "SECONDS"}, ""},
 		{"foobar", 0, Float64Flag{Name: "seconds", EnvVar: "SECONDS"}, fmt.Sprintf(`could not parse foobar as float64 value for flag seconds: .*`)},
@@ -460,6 +463,43 @@ func TestDurationFlagWithEnvVarHelpOutput(t *testing.T) {
 	os.Setenv("APP_BAR", "2h3m6s")
 	for _, test := range durationFlagTests {
 		flag := DurationFlag{Name: test.name, EnvVar: "APP_BAR"}
+		output := flag.String()
+
+		expectedSuffix := " [$APP_BAR]"
+		if runtime.GOOS == "windows" {
+			expectedSuffix = " [%APP_BAR%]"
+		}
+		if !strings.HasSuffix(output, expectedSuffix) {
+			t.Errorf("%s does not end with"+expectedSuffix, output)
+		}
+	}
+}
+
+var timeFlagTests = []struct {
+	name     string
+	expected string
+}{
+	{"hooting", "--hooting value\t(default: 2006-01-02 15:04:05 -0700 MST)"},
+	{"H", "-H value\t(default: 2006-01-02 15:04:05 -0700 MST)"},
+}
+
+func TestTimeFlagHelpOutput(t *testing.T) {
+	MST, _ := time.LoadLocation("MST")
+	for _, test := range timeFlagTests {
+		flag := TimeFlag{Name: test.name, Value: time.Date(2006, 1, 2, 15, 4, 5, 0, MST)}
+		output := flag.String()
+
+		if output != test.expected {
+			t.Errorf("%q does not match %q", output, test.expected)
+		}
+	}
+}
+
+func TestTimeFlagWithEnvVarHelpOutput(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("APP_BAR", "2006-02-01")
+	for _, test := range timeFlagTests {
+		flag := TimeFlag{Name: test.name, EnvVar: "APP_BAR"}
 		output := flag.String()
 
 		expectedSuffix := " [$APP_BAR]"

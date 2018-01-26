@@ -541,6 +541,57 @@ func lookupStringSlice(name string, set *flag.FlagSet) []string {
 	return nil
 }
 
+// TimeFlag is a flag with type time.Time (see https://golang.org/pkg/time/#Parse)
+type TimeFlag struct {
+	Name        string
+	Usage       string
+	EnvVar      string
+	FilePath    string
+	Hidden      bool
+	Value       time.Time
+	Destination *time.Time
+	Format      string
+}
+
+// String returns a readable representation of this value
+// (for usage defaults)
+func (f TimeFlag) String() string {
+	return FlagStringer(f)
+}
+
+// GetName returns the name of the flag
+func (f TimeFlag) GetName() string {
+	return f.Name
+}
+
+// Time looks up the value of a local TimeFlag, returns
+// nil if not found
+func (c *Context) Time(name string) *time.Time {
+	return lookupTime(name, c.flagSet)
+}
+
+// GlobalTime looks up the value of a global TimeFlag, returns
+// nil if not found
+func (c *Context) GlobalTime(name string) *time.Time {
+	if fs := lookupGlobalFlagSet(name, c); fs != nil {
+		return lookupTime(name, fs)
+	}
+	return nil
+}
+
+func lookupTime(name string, set *flag.FlagSet) *time.Time {
+	f := set.Lookup(name)
+	if f == nil {
+		return nil
+	}
+
+	parsed, err := time.Parse(time.RFC3339, f.Value.String())
+	if err != nil {
+		return nil
+	}
+	return &parsed
+}
+
 // Uint64Flag is a flag with type uint64
 type Uint64Flag struct {
 	Name        string
